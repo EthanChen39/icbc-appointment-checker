@@ -1,6 +1,6 @@
 import requests
 import datetime
-from driver_config import DriverConfig
+from checker.driver_config import DriverConfig
 from typing import Dict, List
 from pydantic import BaseModel, ValidationError
 from loguru import logger

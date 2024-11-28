@@ -2,15 +2,15 @@ import datetime
 import threading
 from typing import List
 from loguru import logger
-from icbc_client import ICBCClient, AppointmentModel
-from pushover_client import PushOverClient
+from checker.icbc_client import ICBCClient, AppointmentModel
+from notifications.base_notification import BaseNotification
 
 
 class AppointmentChecker:
     def __init__(
         self,
         icbc_client: ICBCClient,
-        pushover_client: PushOverClient,
+        notification_client: BaseNotification,
         interval: int = 300,
     ):
         """
@@ -21,7 +21,7 @@ class AppointmentChecker:
         :param interval: Time interval in seconds for periodic checks (default 5 mins)
         """
         self.icbc_client = icbc_client
-        self.pushover_client = pushover_client
+        self.notification_client = notification_client
         self.interval = interval
         self.stop_event = threading.Event()  # Event to signal the thread to stop
         self.scheduler_thread = None
@@ -36,7 +36,7 @@ class AppointmentChecker:
         """
         appointment_date = appointment.appointmentDt.get("date")
         appointment_date_obj = datetime.datetime.strptime(appointment_date, "%Y-%m-%d")
-        today_date = datetime.date.today()
+        today_date = datetime.date.today() + datetime.timedelta(days=7)
         n_days_later = today_date + datetime.timedelta(days=n_days)
         return today_date <= appointment_date_obj.date() <= n_days_later
 
@@ -57,7 +57,7 @@ class AppointmentChecker:
             message += f"Date: {appointment_date} ({appointment_day_of_week})\n"
             message += f"Time: {start_time} - {end_time}\n\n"
 
-        self.pushover_client.send_message(title=title, message=message)
+        self.notification_client.send(title=title, message=message)
 
     def fetch_and_notify(self, target_days: int = 30) -> None:
         """
